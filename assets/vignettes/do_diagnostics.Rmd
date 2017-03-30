@@ -1,0 +1,315 @@
+---
+title: Genotype diagnostics in DO mice
+output: rmarkdown::html_vignette
+---
+
+```{r knitr_options, echo=FALSE}
+knitr::opts_chunk$set(message=FALSE, warning=FALSE, fig.width=7.2,
+                      fig.height=5)
+options(width=120)
+```
+
+
+QTL analysis results are dependent upon the fidelity of the data, and
+so an important preliminary activity is the careful investigation of
+the quality of both the genotypes and phenotypes. Diagnosing genotype
+data problems can be particularly tricky in multi-parent populations,
+such as Diversity Outbred (DO) mouse populations. In this document, we
+illustrate our basic strategies for genotype diagnostics in DO mice.
+
+We'll consider data from [Gatti et al. (2014) G3
+4:1623-1633](http://www.g3journal.org/content/4/9/1623.full.pdf),
+available at
+[GitHub](https://github.com/rqtl/qtl2data/tree/master/DO_Gatti2014),
+as well as at the [Mouse Phenome
+Database](http://phenome.jax.org/db/q?rtn=projects/projdet&reqprojid=289).
+We first load the data, directly from the web.
+
+```{r read_data, eval=FALSE}
+library(qtl2geno)
+file <- "https://raw.githubusercontent.com/rqtl/qtl2data/master/DO_Gatti2014/do.zip"
+do <- read_cross2(file)
+
+
+```{r read_data_really, echo=FALSE, results="hide"}
+library(qtl2geno)
+rdsfile <- "diag_cache/gatti.rds"
+if(file.exists(rdsfile)) {
+    do <- readRDS(rdsfile)
+} else {
+    <<read_data>>
+    saveRDS(do, file=rdsfile)
+}
+```
+
+The data concern `r n_ind(do)` DO mice genotyped on the MUGA array,
+with genotypes at `r tot_mar(do)` informative markers. The mice are
+from generations 3-5 of the DO, and so this lower-resolution
+genotyping array is likely sufficient. Later generations have been
+genotyped with the MegaMUGA or GigaMUGA, which have an order of
+magnitude more markers.
+
+
+### Sexes
+
+The first thing we check is the sexes of the mice. One can look for
+the proportion of homozygous genotype calls on the X chromosome, but
+we find it most informative to look at the SNP array intensities for
+SNPs on the X and Y chromosomes.
+
+The detailed SNP array data for these mice are available at the
+[Mouse Phenome
+Database](http://phenome.jax.org/db/q?rtn=projects/projdet&reqprojid=289),
+but the file is nearly 500 MB. We've extractly the overall intensities
+for SNPs on the X and Y chromosomes and placed them in CSV files at
+[GitHub](https://github.com/rqtl/qtl2data/tree/master/DO_Gatti2014/XYint).
+We'll work with these extracted data files.
+
+```{r read_xyint, eval=FALSE}
+url <- "https://raw.githubusercontent.com/rqtl/qtl2data/master/DO_Gatti2014/XYint/"
+xint <- read.csv(paste0(url, "Gatti2014_Xint.csv"))
+yint <- read.csv(paste0(url, "Gatti2014_Yint.csv"))
+rownames(xint) <- xint[,1]
+rownames(yint) <- yint[,1]
+xint <- xint[,-1]
+yint <- yint[,-1]
+```
+
+```{r read_xyint_really, echo=FALSE, results="hide"}
+file <- "diag_cache/xyint.RData"
+if(file.exists(file)) {
+    load(file)
+} else {
+    <<read_xyint>>
+    save(xint, yint, file=file)
+}
+```
+
+Let's grab the sexes of the mice from the cross object, `do`.
+
+```{r grab_sex}
+sex <- do$covar$Sex
+names(sex) <- rownames(do$covar)
+```
+
+There's a bit of a problem, that the individual IDs in `xint` and
+`yint` are like `JAXW202-3168`, which those in the `do` object are
+like `JAXW202.3168`. So we'll replace the hyphens with periods, in the
+former.
+
+```{r fix_names}
+rownames(xint) <- sub("-", ".", rownames(xint), fixed=TRUE)
+rownames(yint) <- sub("-", ".", rownames(yint), fixed=TRUE)
+```
+
+Let's also reorder the `sex` vector so the names are aligned, and
+double-check that they are all aligned.
+
+```{r reorder_sex}
+sex <- sex[rownames(xint)]
+all(names(sex) == rownames(xint) & names(sex) == rownames(yint))
+```
+
+It turns out that many of the SNPs don't do a great job of
+differentiating between males and females. So let's first do a t-test
+for sex differences in intensities at each SNP, and use only the SNPs
+that show a small P-value.
+
+```{r snp_ttests, eval=FALSE}
+xp <- apply(xint, 2, function(a) -log10(t.test(a ~ sex)$p.value))
+yp <- apply(yint, 2, function(a) -log10(t.test(a ~ sex)$p.value))
+```
+
+```{r snp_ttests_really, echo=FALSE, results="hide"}
+file <- "diag_cache/pvals.RData"
+if(file.exists(file)) {
+    load(file)
+} else {
+   <<snp_ttests>>
+   save(xp, yp, file=file)
+}
+```
+
+Of the `r ncol(xint)` SNPs on the X chromosome, `r sum(xp > 3)` have
+-log~10~ p-value > 3, and
+of the `r ncol(yint)` SNPs on the Y chromosome, `r sum(yp > 3)` have
+-log~10~ p-value > 3.
+
+Let's calculate the average intensities across those SNPs.
+
+```{r ave_intensity}
+ave_xint <- rowMeans(xint[,xp > 3])
+ave_yint <- rowMeans(yint[,yp > 3])
+```
+
+Let's make a scatterplot of these, colored by sex. I'll use `iplot()`
+from [R/qtlcharts](http://kbroman.org/qtlcharts), so that the plot is
+interactive, in that when hovering over a point, you'll get a tool tip
+with the individual ID.
+
+As we'll see, there are `r sum(ave_xint<0.9 & sex=="F")` female mice
+with rather low X chromosome intensities. I'm going to plot the points
+in a way that the females will appear on top.
+
+```{r set_size, echo=FALSE}
+library(qtlcharts)
+setScreenSize()
+```
+
+```{r plot_xint_v_yint}
+library(qtlcharts)
+o <- rev(order(sex))
+iplot(ave_xint[o], ave_yint[o], indID=names(ave_xint)[o], group=sex[o],
+      chartOpts=list(pointcolor=c("Orchid", "slateblue"),
+                     xlab="X chr intensity",
+                     ylab="Y chr intensity"))
+```
+
+The females are below and to the right (high X intensity, low Y
+intensity), which the males are above and to the left (low X
+intensity, high Y intensity). But there is one female
+(`r names(sex)[sex=="F" & ave_xint < 0.9 & ave_yint > 0.6]`)
+who sits in the middle of the cloud of males, and there are three
+females
+(`r paste(names(sex)[sex=="F" & ave_xint < 0.9 & ave_yint < 0.6], collapse=", ")`)
+that are in the bottom-left of the figure (low intensities for
+both the X and the Y). The males all look okay: there are
+`r sum(sex=="M" & ave_xint > 0.9)` males with average X intensity > 0.9.
+
+I'm inclined to think that `r names(sex)[sex=="F" & ave_xint < 0.9 & ave_yint > 0.6]`
+is really male; the other three unusual females could be XO, or they
+could be poorly behaved DNA samples.
+
+
+### Sample duplicates
+
+We next look for pairs of samples with unusually similar genotype
+data, which may be sample duplicates or sample contamination.
+We use the function `compare_geno()` in
+[R/qtl2geno](https://github.com/rqtl/qtl2geno), which uses the raw SNP
+data and simply calculates the proportion of matching SNP genotypes
+for each pair of mice.
+
+```{r compare_geno}
+cg <- compare_geno(do)
+```
+
+The `summary()` function will show the pairs with proportions > 0.9.
+
+```{r summary_compare_geno}
+summary(cg)
+```
+
+There is one pair that has matching genotypes at all but
+`r summary(cg)[1,4]` of the `r summary(cg)[1,5]` markers at which they
+were both typed. And actually it's a trio
+(`r summary(cg)[1,2]`, `r summary(cg)[2,1]`, `r summary(cg)[1,1]`)
+with very similar genotypes. And there seems to be another set of four
+mice with very similar genotypes.
+
+Let's look at a histogram of the proportions of matching genotypes
+across all pairs. The tick marks below help to show what's going on in
+the tail of the distribution, and I've highlighted pairs in red that
+have ~80% matching genotypes, and in blue pairs that match at >90% of
+SNPs.
+
+```{r hist_compare_geno}
+p <- cg[upper.tri(cg)]
+par(mar=c(5.1,4.1,0.1,0.1))
+hist(p, breaks=201, main="", ylab="Count", las=1,
+     xlab="Proportion matching genotypes")
+rug(p[p < 0.75], col="#00000030")
+rug(p[p >= 0.75 & p < 0.9], col="violetred")
+rug(p[p >= 0.90], col="slateblue")
+```
+
+As we'll see in the next section, these mice all have appreciable
+missing genotype data, and so the issue may not be sample duplicates
+but rather poor quality DNAs.
+
+
+### Sample quality
+
+There are three main checks of sample quality: the proportion of
+missing data, the inferred number of crossovers, and the estimated
+number of genotyping errors.
+
+```{r plot_prop_missing}
+pmis_ind <- sort(n_missing(do, "individual", "proportion"), decreasing=TRUE)
+iplot(seq(along=pmis_ind), pmis_ind*100,
+      chartOpts=list(xlab="Mice (sorted)", ylab="Percent missing genotypes",
+                     ylim=c(0,max(pmis_ind)*101)))
+```
+
+There are `r sum(pmis_ind > 0.1)` mice with >10% missing genotype
+data. Another `r sum(pmis_ind >= 0.05 & pmis_ind <= 0.1)` mice are
+missing between 5 and 10% of genotypes.
+
+Let's look at estimates of the total number of crossovers, across the
+genome, for each mouse. We first calculate the genotype probabilities,
+which can take a bit of time.
+
+```{r calc_genoprob, eval=FALSE}
+pr <- calc_genoprob(do, error_prob=0.002, map_function="c-f")
+```
+
+```{r calc_genoprob_really, echo=FALSE}
+file <- "diag_cache/probs.rds"
+if(file.exists(file)) {
+    pr <- readRDS(file)
+} else {
+    pr <- calc_genoprob(do, error_prob=0.002, map_function="c-f", cores=0)
+    saveRDS(pr, file=file)
+}
+```
+
+We next find the most probable genotype at each location. (I prefer
+this to Viterbi which seeks the most probable sequence of genotypes
+along each chromosome, though that is another possibility; see the
+`viterbi()` function.) We then use `count_xo()` to get the estimated
+numbers of crossovers.
+
+```{r maxmarg}
+v <- maxmarg(pr)
+n_xo <- count_xo(v)
+```
+
+Let's plot the numbers of crossovers across the genome (obtained by
+`rowSums()`) against the proportion of missing data.
+
+```{r plot_n_xo}
+iplot(pmis_ind[rownames(n_xo)]*100, rowSums(n_xo),
+      chartOpts=list(xlab="Percent missing genotypes",
+                     ylab="Number of crossovers"))
+```
+
+The only clear outliers, in terms of numbers of crossovers, are the
+mice with high rates of missing data; these tend to have low estimated
+numbers of crossovers, which is perhaps no surprise.
+
+
+Calculate error lod scores and combine.
+
+```{r calc_errorlod, eval=FALSE}
+errlod <- calc_errorlod(do, pr)
+errlod <- do.call("cbind", errlod)
+```
+
+```{r calc_errorlod_really, echo=FALSE}
+file <- "diag_cache/errorlod.rds"
+if(file.exists(file)) {
+    errlod <- readRDS(file)
+} else {
+    errlod <- calc_errorlod(do, pr, cores=0)
+    errlod <- do.call("cbind", errlod)
+    saveRDS(errlod, file)
+}
+```
+
+### Marker quality
+
+Proportion missing.
+
+```{r pmis_marker}
+pmis_mar <- n_missing(do, "marker", "proportion")
+```

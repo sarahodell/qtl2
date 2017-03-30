@@ -4,7 +4,7 @@ all: vignettes data external_vignettes extdata
 # R_OPTS: --vanilla without --no-environ
 R_OPTS=--no-save --no-restore --no-init-file --no-site-file
 
-VIGNETTES = assets/vignettes/linreg_benchmarks.html assets/vignettes/hmm_benchmarks.html assets/vignettes/rqtl_diff.html assets/vignettes/version05_new.html
+VIGNETTES = assets/vignettes/linreg_benchmarks.html assets/vignettes/hmm_benchmarks.html assets/vignettes/rqtl_diff.html assets/vignettes/version05_new.html assets/vignettes/do_diagnostics.html
 vignettes: ${VIGNETTES}
 
 EXTERNAL_VIGNETTES = assets/vignettes/developer_guide.html assets/vignettes/input_files.html assets/vignettes/user_guide.html
@@ -22,6 +22,9 @@ assets/vignettes/version05_new.html: assets/vignettes/version05_new.Rmd
 	cd $(<D);R $(R_OPTS) -e "rmarkdown::render('$(<F)')"
 
 assets/vignettes/rqtl_diff.html: assets/vignettes/rqtl_diff.Rmd
+	cd $(<D);R $(R_OPTS) -e "rmarkdown::render('$(<F)')"
+
+assets/vignettes/do_diagnostics.html: assets/vignettes/do_diagnostics.Rmd
 	cd $(<D);R $(R_OPTS) -e "rmarkdown::render('$(<F)')"
 
 data: assets/sampledata/grav2/grav2.yaml assets/sampledata/iron/iron.yaml
