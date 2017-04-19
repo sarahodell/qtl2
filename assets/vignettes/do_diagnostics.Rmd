@@ -60,7 +60,7 @@ SNPs on the X and Y chromosomes.
 The detailed SNP array data for these mice are available at the
 [Mouse Phenome
 Database](http://phenome.jax.org/db/q?rtn=projects/projdet&reqprojid=289),
-but the file is nearly 500 MB. We've extractly the overall intensities
+but the file is nearly 500 MB. We've extracted the overall intensities
 for SNPs on the X and Y chromosomes and placed them in CSV files at
 [GitHub](https://github.com/rqtl/qtl2data/tree/master/DO_Gatti2014/XYint).
 We'll work with these extracted data files.
@@ -93,7 +93,7 @@ names(sex) <- rownames(do$covar)
 ```
 
 There's a bit of a problem, that the individual IDs in `xint` and
-`yint` are like `JAXW202-3168`, which those in the `do` object are
+`yint` are like `JAXW202-3168`, while those in the `do` object are
 like `JAXW202.3168`. So we'll replace the hyphens with periods, in the
 former.
 
@@ -166,7 +166,7 @@ iplot(ave_xint[o], ave_yint[o], indID=names(ave_xint)[o], group=sex[o],
 ```
 
 The females are below and to the right (high X intensity, low Y
-intensity), which the males are above and to the left (low X
+intensity), while the males are above and to the left (low X
 intensity, high Y intensity). But there is one female
 (`r names(sex)[sex=="F" & ave_xint < 0.9 & ave_yint > 0.6]`)
 who sits in the middle of the cloud of males, and there are three
