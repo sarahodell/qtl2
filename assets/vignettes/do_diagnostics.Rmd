@@ -180,33 +180,34 @@ I'm inclined to think that `r names(sex)[sex=="F" & ave_xint < 0.9 & ave_yint > 
 is really male; the other three unusual females could be XO, or they
 could be poorly behaved DNA samples.
 
-It's also useful to look at the frequency of heterozygote genotypes on
-the X chromosome. Particularly informative is a scatterplot of the
-overall proportion of missing genotypes versus the proportion of
-heterozygote calls on the X chromosome.
+Let's also look at the frequency of heterozygote genotypes on the X
+chromosome. We'll make a scatterplot of the proportion of heterozygote
+calls on the X chromosome versus the overall proportion of missing
+genotypes.
 
 ```{r plot_missing_v_xhet}
 phetX <- rowSums(do$geno$X == "2")/rowSums(do$geno$X != "0")
 pmis <- n_missing(do, summary="proportion")
 iplot(pmis, phetX, indID=ind_ids_geno(do), group=do$covar$Sex,
-      chartOpts=list(xlab="Proportion missing genotypes",
+      chartOpts=list(pointcolor=c("Orchid", "slateblue"),
+                     xlab="Proportion missing genotypes",
                      ylab="Proportion het on X chr"))
 ```
 
 There are a number of males with a high proportion of heterozygous
-genotype calls on the X chromosome, but it looks like they all have
-high rates of missing genotypes and so are likely bad DNA samples. The
-proportion of heterozygous calls on the X chromosome in females covers
-a very broad range, from about 5% to nearly 75%. And while this
-feature can be useful for identifying females that were misrecorded as
-males, it is not so informative for identifying males that were
-misrecorded as females.
+genotype calls on the X chromosome, but they all have high rates of
+missing genotypes and so are likely bad DNA samples. The proportion of
+heterozygous calls on the X chromosome in females covers a very broad
+range, from about 5% to nearly 75%. While this feature can be useful
+for identifying females that were misrecorded as males (shouldn't have
+many heterozygous X chromosome genotypes but do), it is not so
+informative for identifying males that were misrecorded as females.
 
 Among males with <5% missing genotypes, here are the five with the
 highest proportion of heterozygous calls on the X chromosome:
 
 ```{r males_high_het}
-sort(phetX[sex=="M" & pmis < 0.05], decreasing=TRUE)[1:5]
+sort(phetX[do$covar$Sex=="M" & pmis < 0.05], decreasing=TRUE)[1:5]
 ```
 
 The highest is `r round(max(phetX[sex=="M" & pmis < 0.05])*100)`%,
@@ -216,13 +217,13 @@ Among females with <5% missing genotypes, here are the sex with the
 lowest proportion of heterozygous calls on the X chromosome:
 
 ```{r females_low_het}
-sort(phetX[sex=="F" & pmis < 0.05])[1:6]
+sort(phetX[do$covar$Sex=="F" & pmis < 0.05])[1:6]
 ```
 
-The lowest five include the four samples identified above, based on
-array intensities, plus also `JAXW202.2490`, with heterozygous
-frequency of `r round(phetX["JAXW202.2490"]*100)`%, but this might
-just be real.
+The lowest five include the four problem samples identified above,
+based on array intensities, plus also `JAXW202.2490`, with
+heterozygous frequency of `r round(phetX["JAXW202.2490"]*100)`%, but
+this might just be real.
 
 
 ### Sample duplicates
