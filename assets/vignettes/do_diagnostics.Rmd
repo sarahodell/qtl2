@@ -29,7 +29,7 @@ We first load the data, directly from the web.
 library(qtl2geno)
 file <- "https://raw.githubusercontent.com/rqtl/qtl2data/master/DO_Gatti2014/do.zip"
 do <- read_cross2(file)
-
+```
 
 ```{r read_data_really, echo=FALSE, results="hide"}
 library(qtl2geno)
