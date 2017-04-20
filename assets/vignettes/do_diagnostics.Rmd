@@ -290,6 +290,14 @@ There are `r sum(pmis_ind > 0.1)` mice with >10% missing genotype
 data. Another `r sum(pmis_ind >= 0.05 & pmis_ind <= 0.1)` mice are
 missing between 5 and 10% of genotypes.
 
+Also look at genotype frequencies in the raw SNP data, for individuals
+with <5% missing genotypes.
+
+```{r geno_freq}
+p <- t(apply(g, 1, function(a) { tab <- table(factor(a, levels=0:3))[-1]; tab/sum(tab) }))
+itriplot(p[pmis<0.05,], chartOpts=list(labels=c("A", "H","B"))
+```
+
 Let's look at estimates of the total number of crossovers, across the
 genome, for each mouse. We first calculate the genotype probabilities,
 which can take a bit of time.
