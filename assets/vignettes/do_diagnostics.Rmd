@@ -186,7 +186,7 @@ calls on the X chromosome versus the overall proportion of missing
 genotypes.
 
 ```{r plot_missing_v_xhet}
-phetX <- rowSums(do$geno$X == "2")/rowSums(do$geno$X != "0")
+phetX <- rowSums(do$geno$X == 2)/rowSums(do$geno$X != 0)
 pmis <- n_missing(do, summary="proportion")
 iplot(pmis, phetX, indID=ind_ids_geno(do), group=do$covar$Sex,
       chartOpts=list(pointcolor=c("Orchid", "slateblue"),
