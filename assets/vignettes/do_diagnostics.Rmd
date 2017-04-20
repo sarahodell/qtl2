@@ -294,8 +294,9 @@ Also look at genotype frequencies in the raw SNP data, for individuals
 with <5% missing genotypes.
 
 ```{r geno_freq}
+g <- do.call("cbind", do$geno[1:19])
 p <- t(apply(g, 1, function(a) { tab <- table(factor(a, levels=0:3))[-1]; tab/sum(tab) }))
-itriplot(p[pmis<0.05,], chartOpts=list(labels=c("A", "H","B"))
+itriplot(p[pmis<0.05,], chartOpts=list(labels=c("A", "H","B")))
 ```
 
 Let's look at estimates of the total number of crossovers, across the
@@ -358,6 +359,40 @@ if(file.exists(file)) {
     saveRDS(errlod, file)
 }
 ```
+
+Histogram of the error LOD scores. We really only care about values
+>4 or so.
+
+```{r hist_errorlod}
+hist(errlod, breaks=200, xlab="Error LOD score", ylab="", yaxt="n", main="")
+```
+
+Histogram of proportion of problems by individual. No individual has
+more than `r max(rowSums(errlod>4))` error LOD scores >4.
+
+```{r hist_errorlod_byind}
+hist(rowSums(errlod>4), breaks=seq(-0.1, 13.1, by=0.2),
+     xlab="Number of error LOD > 4", ylab="", yaxt="n", main="")
+```
+
+The distribution by marker is quite different. The large error LOD
+scores are concentrated on a smaller number of markers. Here's a plot
+of percent error LOD scores >4, by marker.
+
+```{r plot_errorlod_bymar}
+chr <- rep(names(do$gmap), sapply(do$gmap, length))
+colme <- colMeans(errlod>4)*100
+
+iplot(1:ncol(errlod), colme,
+      indID=paste0(colnames(errlod), " (chr ", chr, ")"),
+      chartOpts=list(ylab="Percent of error LOD > 4",
+                     xlab="Marker index"))
+```
+
+Of the `r length(colme)` markers, there are `r sum(colme>10)` with
+>10% problems, and `r sum(colme>5)` with >5% problems.
+But `r round(mean(colme==0)*100)`% of markers have no problems at all.
+
 
 ### Marker quality
 
