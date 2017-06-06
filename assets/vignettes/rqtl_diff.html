@@ -4,7 +4,7 @@
 
 <head>
 
-<meta charset="utf-8">
+<meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 
@@ -96,7 +96,7 @@ mycross &lt;-<span class="st"> </span><span class="kw">convert2cross2</span>(myc
 <li><a href="https://github.com/rqtl/qtl2convert">qtl2convert</a>, for converting data among the R/qtl2, R/qtl, and <a href="https://www.bioconductor.org/packages/release/bioc/html/DOQTL.html">DOQTL</a> formats</li>
 </ul>
 <p>We have in mind that, for high-dimensional data, the QTL genotype probability calculations with qtl2geno will be performed once and saved, and that the genome scans with qtl2scan will be performed in “batch” (e.g., on a cluster) and also saved, and that interactive analyses will mostly be in the data visualizations with qtl2plot.</p>
-<p>If it’s confusing which function is in which package, consider just loading all of the new packages.</p>
+<p>It can be confusing to remember which function is in which package. For this reason, we created an additional, largely empty package <a href="https://github.com/rqtl/qtl2">qtl2</a>. If you load qtl2 with <code>library(qtl2)</code>, the three main packages, <a href="https://github.com/rqtl/qtl2geno">qtl2geno</a>, <a href="https://github.com/rqtl/qtl2scan">qtl2scan</a>, and <a href="https://github.com/rqtl/qtl2plot">qtl2plot</a>, will all be loaded.</p>
 </div>
 <div id="new-functions-names" class="section level2">
 <h2>New functions names</h2>
@@ -114,7 +114,7 @@ mycross &lt;-<span class="st"> </span><span class="kw">convert2cross2</span>(myc
 </div>
 <div id="treatment-of-intermediate-calculations" class="section level2">
 <h2>Treatment of intermediate calculations</h2>
-<p>We’re no longer storing intermediate calculations as part of the cross object. For example, <code>calc_genoprob()</code>, to calculate QTL genotype probabilities given the observed marker data, returns a list that includes the probabilities and the related map. <code>scan1()</code>, to perform a genome scan, takes these probabilities plus a phenotype matrix.</p>
+<p>We’re no longer storing intermediate calculations as part of the cross object. For example, <code>calc_genoprob()</code>, to calculate QTL genotype probabilities given the observed marker data, returns a list with the probabilities. <code>scan1()</code>, to perform a genome scan, takes these probabilities plus a phenotype matrix.</p>
 </div>
 <div id="use-of-individual-identifiers-for-aligning-data" class="section level2">
 <h2>Use of individual identifiers for aligning data</h2>
@@ -147,7 +147,7 @@ mycross[ind, chr]</code></pre>
   (function () {
     var script = document.createElement("script");
     script.type = "text/javascript";
-    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
     document.getElementsByTagName("head")[0].appendChild(script);
   })();
 </script>
