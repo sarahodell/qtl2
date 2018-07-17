@@ -33,6 +33,7 @@
 #include "cross_dh6.h"
 #include "cross_ail3.h"
 #include "cross_ail3pk.h"
+#include "cross_dh16.h"
 
 QTLCross* QTLCross::Create(const String& crosstype)
 {
@@ -59,6 +60,7 @@ QTLCross* QTLCross::Create(const String& crosstype)
     if(crosstype=="dh6")     return new DH6();
     if(crosstype=="ail3")    return new AIL3();
     if(crosstype=="ail3pk")  return new AIL3PK();
+    if(crosstype=="dh16")    return new DH16();
 
     throw std::range_error("cross type not yet supported.");
     return NULL;
